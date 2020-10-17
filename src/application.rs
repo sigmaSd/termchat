@@ -21,6 +21,7 @@ enum NetMessage {
     HelloLan(String, u16), // user_name, server_port
     HelloUser(String), // user_name
     UserMessage(String), // content
+    UserData((String, Vec<u8>)),
 }
 
 enum Event {
@@ -97,6 +98,16 @@ impl Application {
                             let message = LogMessage::new(user.into(), MessageType::Content(content));
                             state.add_message(message);
                         }
+                        NetMessage::UserData((file_name, data)) => {
+                            use std::io::Write;
+                            let user = state.user_name(endpoint).unwrap();
+                            let dir_path = std::env::temp_dir().join(user);
+                            let _ = std::fs::create_dir_all(&dir_path);
+
+                            let file_path = dir_path.join(file_name);
+                            let mut file = std::fs::File::create(file_path).unwrap();
+                            file.write_all(&data).unwrap();
+                        }
                     },
                     NetEvent::AddedEndpoint(_) => (),
                     NetEvent::RemovedEndpoint(endpoint) => {
@@ -119,8 +130,15 @@ impl Application {
                         KeyCode::Enter => {
                             if let Some(input) = state.reset_input() {
                                 let message = LogMessage::new(format!("{} (me)", self.user_name), MessageType::Content(input.clone()));
-                                self.network.send_all(state.all_user_endpoints(), NetMessage::UserMessage(input)).unwrap();
+                                self.network.send_all(state.all_user_endpoints(), NetMessage::UserMessage(input.clone())).unwrap();
                                 state.add_message(message);
+
+                                if input.starts_with("?send") {
+                                    let payload_path = std::path::Path::new(input.split_whitespace().nth(1).unwrap());
+                                    let file_name = payload_path.file_name().unwrap().to_str().unwrap().to_string();
+                                    let payload = std::fs::read(payload_path).unwrap();
+                                    self.network.send_all(state.all_user_endpoints(), NetMessage::UserData((file_name,payload))).unwrap();
+                                }
                             }
                         },
                         KeyCode::Delete => {
