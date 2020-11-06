@@ -19,7 +19,6 @@ use message_io::network::{NetEvent, NetworkManager};
 
 use serde::{Deserialize, Serialize};
 
-use std::collections::HashMap;
 use std::io::{self, Stdout};
 use std::net::SocketAddr;
 
@@ -52,26 +51,7 @@ pub struct Application {
     discovery_addr: SocketAddr,
     tcp_server_addr: SocketAddr,
     user_name: String,
-    send_threads: SendThreads,
-}
-
-/// Struct used to keep track of the threads that are sending files
-#[derive(Default)]
-struct SendThreads {
     id: usize,
-    threads: HashMap<usize, std::thread::JoinHandle<()>>,
-}
-impl SendThreads {
-    fn get(&self, id: &usize) -> Option<&std::thread::JoinHandle<()>> {
-        self.threads.get(id)
-    }
-    fn insert(&mut self, thread: std::thread::JoinHandle<()>) {
-        self.threads.insert(self.id, thread);
-        self.id += 1;
-    }
-    fn free_id(&self) -> usize {
-        self.id
-    }
 }
 
 impl Application {
@@ -116,7 +96,7 @@ impl Application {
             discovery_addr,
             tcp_server_addr,
             user_name: user_name.into(),
-            send_threads: SendThreads::default(),
+            id: 0,
         })
     }
 
@@ -158,9 +138,8 @@ impl Application {
                         } else {
                             state.progress_pulse(id, file_size, bytes_read);
                         }
-                        if let Some(handle) = self.send_threads.get(&id) {
-                            handle.thread().unpark();
-                        }
+                        *self.read_file_ev.lock.0.lock().unwrap() = false;
+                        self.read_file_ev.lock.1.notify_all();
                         Ok(())
                     };
 

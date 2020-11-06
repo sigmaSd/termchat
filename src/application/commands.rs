@@ -23,12 +23,10 @@ impl Application {
             .ok_or(READ_FILENAME_ERROR)?
             .to_string();
 
-        let thread_id = self.send_threads.free_id();
-        let thread = self
-            .read_file_ev
-            .send(thread_id, file_name, path.to_path_buf());
-        state.progress_start(thread_id);
-        self.send_threads.insert(thread);
+        self.read_file_ev
+            .send(self.id, file_name, path.to_path_buf());
+        state.progress_start(self.id);
+        self.id += 1;
 
         Ok(())
     }

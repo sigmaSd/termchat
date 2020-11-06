@@ -1,10 +1,11 @@
 use crate::util::Result;
-use std::sync::Arc;
+use std::sync::{Arc, Condvar, Mutex};
 
 type CallBack = Box<dyn Fn(Result<Chunk>) + Send + Sync>;
 
 pub struct ReadFile {
     callback: Arc<CallBack>,
+    pub lock: Arc<(Mutex<bool>, Condvar)>,
 }
 
 pub struct Chunk {
@@ -19,6 +20,7 @@ impl ReadFile {
     pub fn new(callback: CallBack) -> Self {
         Self {
             callback: Arc::new(callback),
+            lock: Arc::new((Mutex::new(true), Condvar::new())),
         }
     }
 
@@ -29,6 +31,7 @@ impl ReadFile {
         path: std::path::PathBuf,
     ) -> std::thread::JoinHandle<()> {
         let callback = self.callback.clone();
+        let lock = self.lock.clone();
 
         std::thread::spawn(move || {
             use std::convert::TryInto;
@@ -71,7 +74,16 @@ impl ReadFile {
                         break;
                     }
                 }
-                std::thread::park();
+
+                let (lock, cvar) = &*lock;
+                // As long as the value inside the `Mutex<bool>` is `true`, we wait.
+                let guard = cvar
+                    .wait_while(lock.lock().unwrap(), |pending| *pending)
+                    .unwrap();
+
+                // drop guard so we can modify the lock again
+                drop(guard);
+                *lock.lock().unwrap() = true;
             }
         })
     }
