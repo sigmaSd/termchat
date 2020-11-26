@@ -55,7 +55,7 @@ pub trait Report: Sized {
     }
 }
 
-impl<T> Report for Result<T> {
+impl Report for Result<()> {
     fn report_if_fail(self, state: &mut State) {
         if let Err(e) = self {
             state.add_system_error_message(e.to_string());
