@@ -42,10 +42,14 @@ pub fn stringify_sendall_errors(e: Vec<(message_io::network::Endpoint, std::io::
 }
 
 use crate::state::State;
-// Trait for reporting recoverable errors to the user
+/// Trait for reporting recoverable errors to the user
 pub trait ReportErr: Sized {
-    fn report_if_fail(self, _state: &mut State) {}
-    fn report_err(self, _state: &mut State) {}
+    fn report_if_fail(self, _state: &mut State) {
+        unimplemented!()
+    }
+    fn report_err(self, _state: &mut State) {
+        unimplemented!()
+    }
 }
 
 impl<T> ReportErr for Result<T> {
