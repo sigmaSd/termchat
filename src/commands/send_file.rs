@@ -2,7 +2,7 @@ use crate::action::{Action, Processing};
 use crate::commands::{Command};
 use crate::state::{State};
 use crate::message::{NetMessage, Chunk};
-use crate::util::{Result};
+use crate::util::{Result, ReportErr};
 
 use message_io::network::{NetworkManager};
 
@@ -64,8 +64,7 @@ impl Action for SendFile {
             Ok(0) => (0, Chunk::End, Processing::Completed),
             Ok(bytes_read) => (bytes_read, Chunk::Data(data.to_vec()), Processing::Partial),
             Err(error) => {
-                let msg = format!("Error sending file. error: {}", error);
-                state.add_system_error_message(msg);
+                format!("Error sending file. error: {}", error).report_err(state);
                 (0, Chunk::Error, Processing::Completed)
             }
         };
@@ -73,7 +72,7 @@ impl Action for SendFile {
         state.progress_message_update(self.progress_id.unwrap(), bytes_read as u64);
 
         let message = NetMessage::UserData(self.file_name.clone(), chunk);
-        network.send_all(state.all_user_endpoints(), message).ok(); //Best effort
+        network.send_all(state.all_user_endpoints(), message).report_if_fail(state); //Best effort
 
         processing
     }
