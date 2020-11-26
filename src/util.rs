@@ -74,6 +74,12 @@ impl Reportable for std::result::Result<(), Vec<(message_io::network::Endpoint, 
     }
 }
 
+impl Reportable for Box<dyn std::error::Error + Send + Sync> {
+    fn report_err(self, state: &mut State) {
+        self.to_string().report_err(state);
+    }
+}
+
 impl Reportable for String {
     fn report_err(self, state: &mut State) {
         state.add_system_error_message(self);
@@ -82,10 +88,8 @@ impl Reportable for String {
     fn report_info(self, state: &mut State) {
         state.add_system_info_message(self);
     }
-}
 
-impl Reportable for Box<dyn std::error::Error + Send + Sync> {
-    fn report_err(self, state: &mut State) {
-        self.to_string().report_err(state);
+    fn report_warn(self, state: &mut State) {
+        state.add_system_info_message(self);
     }
 }
