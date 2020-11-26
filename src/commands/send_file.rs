@@ -2,7 +2,7 @@ use crate::action::{Action, Processing};
 use crate::commands::{Command};
 use crate::state::{State};
 use crate::message::{NetMessage, Chunk};
-use crate::util::{Result, ReportErr};
+use crate::util::{Result, Report};
 
 use message_io::network::{NetworkManager};
 

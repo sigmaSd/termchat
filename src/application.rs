@@ -4,7 +4,7 @@ use crate::renderer::{Renderer};
 use crate::action::{Action, Processing};
 use crate::commands::{CommandManager};
 use crate::message::{NetMessage, Chunk};
-use crate::util::{Error, Result, ReportErr};
+use crate::util::{Error, Result, Report};
 use crate::commands::send_file::{SendFileCommand};
 
 use crossterm::event::{Event as TermEvent, KeyCode, KeyEvent, KeyModifiers};
@@ -141,11 +141,11 @@ impl<'a> Application<'a> {
                                 .report_err(&mut self.state);
                         }
                         Chunk::End => {
-                            let msg = format!(
+                            format!(
                                 "Successfully received file '{}' from user '{}'!",
                                 file_name, user
-                            );
-                            self.state.add_system_info_message(msg);
+                            )
+                            .report_info(&mut self.state);
                         }
                         Chunk::Data(data) => {
                             let try_write = || -> Result<()> {

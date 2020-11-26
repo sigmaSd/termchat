@@ -43,16 +43,19 @@ pub fn stringify_sendall_errors(e: Vec<(message_io::network::Endpoint, std::io::
 
 use crate::state::State;
 /// Trait for reporting recoverable errors to the user
-pub trait ReportErr: Sized {
+pub trait Report: Sized {
     fn report_if_fail(self, _state: &mut State) {
         unimplemented!()
     }
     fn report_err(self, _state: &mut State) {
         unimplemented!()
     }
+    fn report_info(self, _state: &mut State) {
+        unimplemented!()
+    }
 }
 
-impl<T> ReportErr for Result<T> {
+impl<T> Report for Result<T> {
     fn report_if_fail(self, state: &mut State) {
         if let Err(e) = self {
             state.add_system_error_message(e.to_string());
@@ -60,7 +63,7 @@ impl<T> ReportErr for Result<T> {
     }
 }
 
-impl ReportErr for std::result::Result<(), Vec<(message_io::network::Endpoint, std::io::Error)>> {
+impl Report for std::result::Result<(), Vec<(message_io::network::Endpoint, std::io::Error)>> {
     fn report_if_fail(self, state: &mut State) {
         if let Err(e) = self {
             state.add_system_error_message(crate::util::stringify_sendall_errors(e));
@@ -68,13 +71,17 @@ impl ReportErr for std::result::Result<(), Vec<(message_io::network::Endpoint, s
     }
 }
 
-impl ReportErr for String {
+impl Report for String {
     fn report_err(self, state: &mut State) {
         state.add_system_error_message(self);
     }
+
+    fn report_info(self, state: &mut State) {
+        state.add_system_info_message(self);
+    }
 }
 
-impl ReportErr for Box<dyn std::error::Error + Send + Sync> {
+impl Report for Box<dyn std::error::Error + Send + Sync> {
     fn report_err(self, state: &mut State) {
         self.to_string().report_err(state);
     }
