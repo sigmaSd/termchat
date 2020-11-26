@@ -72,7 +72,7 @@ impl Action for SendFile {
         state.progress_message_update(self.progress_id.unwrap(), bytes_read as u64);
 
         let message = NetMessage::UserData(self.file_name.clone(), chunk);
-        network.send_all(state.all_user_endpoints(), message).report_if_fail(state); //Best effort
+        network.send_all(state.all_user_endpoints(), message).report_if_fail(state);
 
         processing
     }
