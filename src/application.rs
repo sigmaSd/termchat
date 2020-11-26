@@ -4,7 +4,7 @@ use crate::renderer::{Renderer};
 use crate::action::{Action, Processing};
 use crate::commands::{CommandManager};
 use crate::message::{NetMessage, Chunk};
-use crate::util::{Error, Result, Report};
+use crate::util::{Error, Result, Reportable};
 use crate::commands::send_file::{SendFileCommand};
 
 use crossterm::event::{Event as TermEvent, KeyCode, KeyEvent, KeyModifiers};
@@ -116,7 +116,7 @@ impl<'a> Application<'a> {
                         self.state.connected_user(user_endpoint, &user);
                         Ok(())
                     };
-                    try_connect().report_if_fail(&mut self.state);
+                    try_connect().report_if_err(&mut self.state);
                 }
             }
             // by tcp:
@@ -166,7 +166,7 @@ impl<'a> Application<'a> {
                                 Ok(())
                             };
 
-                            try_write().report_if_fail(&mut self.state);
+                            try_write().report_if_err(&mut self.state);
                         }
                     }
                 }
@@ -205,7 +205,7 @@ impl<'a> Application<'a> {
                                         self.state.all_user_endpoints(),
                                         NetMessage::UserMessage(input.clone()),
                                     )
-                                    .report_if_fail(&mut self.state);
+                                    .report_if_err(&mut self.state);
 
                                 if let Some(action) = action {
                                     self.process_action(action)

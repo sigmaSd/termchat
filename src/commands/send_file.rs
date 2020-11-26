@@ -2,7 +2,7 @@ use crate::action::{Action, Processing};
 use crate::commands::{Command};
 use crate::state::{State};
 use crate::message::{NetMessage, Chunk};
-use crate::util::{Result, Report};
+use crate::util::{Result, Reportable};
 
 use message_io::network::{NetworkManager};
 
@@ -72,7 +72,7 @@ impl Action for SendFile {
         state.progress_message_update(self.progress_id.unwrap(), bytes_read as u64);
 
         let message = NetMessage::UserData(self.file_name.clone(), chunk);
-        network.send_all(state.all_user_endpoints(), message).report_if_fail(state);
+        network.send_all(state.all_user_endpoints(), message).report_if_err(state);
 
         processing
     }
