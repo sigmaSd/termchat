@@ -19,8 +19,6 @@ static CONFIG2: Lazy<Config> = Lazy::new(|| Config {
 
 #[test]
 fn send_file() {
-    let _g = Guard::new();
-
     let termchat_dir = std::env::temp_dir().join("termchat");
     let test_path = termchat_dir.join("test");
     let _ = std::fs::remove_dir_all(&termchat_dir);
@@ -57,7 +55,10 @@ fn test_user(n: usize) -> (EventSender<Event>, std::thread::JoinHandle<()>) {
     let mut app = Application::new(config).unwrap();
     let sender = app.event_queue.sender().clone();
     let t = std::thread::spawn(move || {
-        app.run().unwrap();
+        let mut f =
+            std::fs::File::create(std::env::temp_dir().join("termchat").join(n.to_string()))
+                .unwrap();
+        app.run(&mut f).unwrap();
     });
     (sender, t)
 }
@@ -73,17 +74,4 @@ fn input(sender: &mut EventSender<Event>, s: &str) {
         code: crossterm::event::KeyCode::Enter,
         modifiers: crossterm::event::KeyModifiers::NONE,
     })));
-}
-
-struct Guard;
-impl Guard {
-    fn new() -> Self {
-        execute!(stdout(), EnterAlternateScreen).unwrap();
-        Self
-    }
-}
-impl Drop for Guard {
-    fn drop(&mut self) {
-        execute!(stdout(), LeaveAlternateScreen).unwrap();
-    }
 }

@@ -10,16 +10,17 @@ use tui::backend::{CrosstermBackend};
 
 use std::io::{self, Stdout};
 
-pub struct Renderer {
-    terminal: Terminal<CrosstermBackend<Stdout>>,
+pub struct Renderer<W: std::io::Write> {
+    terminal: Terminal<CrosstermBackend<W>>,
 }
 
-impl Renderer {
-    pub fn new() -> Result<Renderer> {
+impl<W: std::io::Write> Renderer<W> {
+    pub fn new(mut out: W) -> Result<Renderer<W>> {
         terminal::enable_raw_mode()?;
-        io::stdout().execute(terminal::EnterAlternateScreen)?;
+        //io::stdout().execute(terminal::EnterAlternateScreen)?;
+        out.execute(terminal::EnterAlternateScreen)?;
 
-        Ok(Renderer { terminal: Terminal::new(CrosstermBackend::new(io::stdout()))? })
+        Ok(Renderer { terminal: Terminal::new(CrosstermBackend::new(out))? })
     }
 
     pub fn render(&mut self, state: &State) -> Result<()> {
@@ -28,9 +29,9 @@ impl Renderer {
     }
 }
 
-impl Drop for Renderer {
+impl<W: std::io::Write> Drop for Renderer<W> {
     fn drop(&mut self) {
-        io::stdout().execute(terminal::LeaveAlternateScreen).expect("Could not execute to stdout");
+        //        io::stdout().execute(terminal::LeaveAlternateScreen).expect("Could not execute to stdout");
         terminal::disable_raw_mode().expect("Terminal doesn't support to disable raw mode");
         if std::thread::panicking() {
             eprintln!(

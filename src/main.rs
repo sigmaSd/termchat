@@ -49,8 +49,9 @@ fn main() {
         user_name: matches.value_of("username").unwrap().into(),
     };
 
+    let mut stdout = std::io::stdout();
     let result = match Application::new(&config) {
-        Ok(mut app) => app.run(),
+        Ok(mut app) => app.run(&mut stdout),
         Err(e) => Err(e),
     };
 
