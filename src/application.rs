@@ -37,7 +37,7 @@ pub struct Application<'a> {
     commands: CommandManager,
     //read_file_ev: ReadFile,
     _terminal_events: TerminalEventCollector,
-    pub event_queue: EventQueue<Event>,
+    event_queue: EventQueue<Event>,
 }
 
 impl<'a> Application<'a> {
