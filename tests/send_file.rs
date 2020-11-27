@@ -1,21 +1,9 @@
-use once_cell::sync::Lazy;
 use termchat::application::{Application, Event, Config};
 use message_io::events::EventSender;
 use std::io::stdout;
 use crossterm::execute;
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use std::io::Write;
-
-static CONFIG: Lazy<Config> = Lazy::new(|| Config {
-    discovery_addr: "238.255.0.1:5877".parse().unwrap(),
-    tcp_server_port: "0".parse().unwrap(),
-    user_name: "A".to_string(),
-});
-static CONFIG2: Lazy<Config> = Lazy::new(|| Config {
-    discovery_addr: "238.255.0.1:5877".parse().unwrap(),
-    tcp_server_port: "0".parse().unwrap(),
-    user_name: "B".to_string(),
-});
 
 #[test]
 fn send_file() {
@@ -53,7 +41,11 @@ fn send_file() {
 }
 
 fn test_user(n: usize) -> (EventSender<Event>, std::thread::JoinHandle<()>) {
-    let config = if n == 1 { &CONFIG } else { &CONFIG2 };
+    let config = Config {
+        discovery_addr: "238.255.0.1:5877".parse().unwrap(),
+        tcp_server_port: "0".parse().unwrap(),
+        user_name: n.to_string(),
+    };
     let mut app = Application::new(config).unwrap();
     let sender = app.sender();
     let t = std::thread::spawn(move || {

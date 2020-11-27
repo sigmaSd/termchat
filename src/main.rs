@@ -49,7 +49,7 @@ fn main() {
         user_name: matches.value_of("username").unwrap().into(),
     };
 
-    let result = match Application::new(&config) {
+    let result = match Application::new(config) {
         Ok(mut app) => app.run(),
         Err(e) => Err(e),
     };

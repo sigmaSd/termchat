@@ -30,8 +30,8 @@ pub struct Config {
     pub user_name: String,
 }
 
-pub struct Application<'a> {
-    config: &'a Config,
+pub struct Application {
+    config: Config,
     state: State,
     network: NetworkManager,
     commands: CommandManager,
@@ -40,8 +40,8 @@ pub struct Application<'a> {
     event_queue: EventQueue<Event>,
 }
 
-impl<'a> Application<'a> {
-    pub fn new(config: &'a Config) -> Result<Application<'a>> {
+impl Application {
+    pub fn new(config: Config) -> Result<Application> {
         let mut event_queue = EventQueue::new();
 
         let sender = event_queue.sender().clone(); // Collect network events
