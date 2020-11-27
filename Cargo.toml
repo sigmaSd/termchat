@@ -15,7 +15,7 @@ categories = ["command-line-utilities", "command-line-interface"]
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-message-io = "0.4.5"
+message-io = {git = "https://github.com/lemunozm/message-io", branch = "fix/fast_fix_send_would_block"} 
 serde = { version = "1.0.116", features = ["derive"] }
 crossterm = "0.18.0"
 tui = { version = "0.12.0", default-features = false, features = ['crossterm'] }
@@ -23,3 +23,5 @@ whoami = "0.9.0"
 chrono = "0.4.19"
 clap = "2.33.3"
 unicode-width = "0.1.8"
+once_cell = "1.5.2"
+rand = "0.7.3"

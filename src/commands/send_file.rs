@@ -33,7 +33,7 @@ pub struct SendFile {
 }
 
 impl SendFile {
-    const CHUNK_SIZE: usize = 65500;
+    const CHUNK_SIZE: usize = 65535;
 
     pub fn new(file_path: &str) -> Result<SendFile> {
         const READ_FILENAME_ERROR: &str = "Unable to read file name";
@@ -62,7 +62,9 @@ impl Action for SendFile {
         let mut data = [0; Self::CHUNK_SIZE];
         let (bytes_read, chunk, processing) = match self.file.read(&mut data) {
             Ok(0) => (0, Chunk::End, Processing::Completed),
-            Ok(bytes_read) => (bytes_read, Chunk::Data(data.to_vec()), Processing::Partial),
+            Ok(bytes_read) => {
+                (bytes_read, Chunk::Data(data[..bytes_read].to_vec()), Processing::Partial)
+            }
             Err(error) => {
                 format!("Error sending file. error: {}", error).report_err(state);
                 (0, Chunk::Error, Processing::Completed)
