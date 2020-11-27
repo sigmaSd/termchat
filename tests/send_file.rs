@@ -55,7 +55,7 @@ fn send_file() {
 fn test_user(n: usize) -> (EventSender<Event>, std::thread::JoinHandle<()>) {
     let config = if n == 1 { &CONFIG } else { &CONFIG2 };
     let mut app = Application::new(config).unwrap();
-    let sender = app.event_queue.sender().clone();
+    let sender = app.sender();
     let t = std::thread::spawn(move || {
         app.run().unwrap();
     });

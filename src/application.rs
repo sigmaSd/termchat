@@ -262,4 +262,8 @@ impl<'a> Application<'a> {
             }
         }
     }
+
+    pub fn sender(&mut self) -> message_io::events::EventSender<Event> {
+        self.event_queue.sender().clone()
+    }
 }
