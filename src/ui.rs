@@ -9,9 +9,9 @@ use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph, Wrap};
 use tui::{Frame};
 
-use std::io::Stdout;
+use std::io::Write;
 
-pub fn draw(frame: &mut Frame<CrosstermBackend<Stdout>>, state: &State, chunk: Rect) {
+pub fn draw(frame: &mut Frame<CrosstermBackend<impl Write>>, state: &State, chunk: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(0), Constraint::Length(6)].as_ref())
@@ -21,7 +21,11 @@ pub fn draw(frame: &mut Frame<CrosstermBackend<Stdout>>, state: &State, chunk: R
     draw_input_panel(frame, state, chunks[1]);
 }
 
-fn draw_messages_panel(frame: &mut Frame<CrosstermBackend<Stdout>>, state: &State, chunk: Rect) {
+fn draw_messages_panel(
+    frame: &mut Frame<CrosstermBackend<impl Write>>,
+    state: &State,
+    chunk: Rect,
+) {
     const MESSAGE_COLORS: [Color; 4] = [Color::Blue, Color::Yellow, Color::Cyan, Color::Magenta];
 
     let messages = state
@@ -31,8 +35,7 @@ fn draw_messages_panel(frame: &mut Frame<CrosstermBackend<Stdout>>, state: &Stat
         .map(|message| {
             let color = if let Some(id) = state.users_id().get(&message.user) {
                 MESSAGE_COLORS[id % MESSAGE_COLORS.len()]
-            }
-            else {
+            } else {
                 Color::Green //because is a message of the own user
             };
             let date = message.date.format("%H:%M:%S ").to_string();
@@ -122,19 +125,17 @@ fn parse_content(content: &str) -> Vec<Span> {
             .map(|(index, part)| {
                 if index == 0 {
                     Span::styled(part, Style::default().fg(Color::LightYellow))
-                }
-                else {
+                } else {
                     Span::raw(format!(" {}", part))
                 }
             })
             .collect()
-    }
-    else {
+    } else {
         vec![Span::raw(content)]
     }
 }
 
-fn draw_input_panel(frame: &mut Frame<CrosstermBackend<Stdout>>, state: &State, chunk: Rect) {
+fn draw_input_panel(frame: &mut Frame<CrosstermBackend<impl Write>>, state: &State, chunk: Rect) {
     let inner_width = (chunk.width - 2) as usize;
 
     let input = state.input().iter().collect::<String>();

@@ -1,20 +1,18 @@
 use termchat::application::{Application, Event, Config};
 use message_io::events::EventSender;
-use std::io::stdout;
-use crossterm::execute;
-use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
-use std::io::Write;
 
 #[test]
 fn send_file() {
-    let _g = Guard::new();
-
     let termchat_dir = std::env::temp_dir().join("termchat");
     let test_path = termchat_dir.join("test");
     let _ = std::fs::remove_dir_all(&termchat_dir);
     std::fs::create_dir_all(&termchat_dir).unwrap();
 
-    let data = vec![rand::random(); 10usize.pow(6)];
+    let mut data = Vec::with_capacity(10usize.pow(6));
+    for _ in 0..10usize.pow(6) {
+        data.push(rand::random());
+    }
+
     std::fs::write(&test_path, &data).unwrap();
 
     let (mut s1, t1) = test_user(1);
@@ -26,7 +24,6 @@ fn send_file() {
     input(&mut s1, &format!("?send {}", test_path.display()));
     // wait for the file to finish sending
     std::thread::sleep(std::time::Duration::from_secs(2));
-
     // finish
     s1.send(Event::Close(None));
     s2.send(Event::Close(None));
@@ -35,7 +32,7 @@ fn send_file() {
 
     // assert eq
     let send_data =
-        std::fs::read(std::env::temp_dir().join("termchat").join("A").join("test")).unwrap();
+        std::fs::read(std::env::temp_dir().join("termchat").join("1").join("test")).unwrap();
     assert_eq!(data.len(), send_data.len());
     assert_eq!(data, send_data);
 }
@@ -49,7 +46,7 @@ fn test_user(n: usize) -> (EventSender<Event>, std::thread::JoinHandle<()>) {
     let mut app = Application::new(config).unwrap();
     let sender = app.sender();
     let t = std::thread::spawn(move || {
-        app.run().unwrap();
+        app.run(std::io::sink()).unwrap();
     });
     (sender, t)
 }
@@ -65,17 +62,4 @@ fn input(sender: &mut EventSender<Event>, s: &str) {
         code: crossterm::event::KeyCode::Enter,
         modifiers: crossterm::event::KeyModifiers::NONE,
     })));
-}
-
-struct Guard;
-impl Guard {
-    fn new() -> Self {
-        execute!(stdout(), EnterAlternateScreen).unwrap();
-        Self
-    }
-}
-impl Drop for Guard {
-    fn drop(&mut self) {
-        execute!(stdout(), LeaveAlternateScreen).unwrap();
-    }
 }
