@@ -15,7 +15,7 @@ use message_io::network::{NetEvent, NetworkManager, Endpoint};
 use std::net::{SocketAddrV4};
 use std::io::{ErrorKind};
 
-enum Event {
+pub enum Event {
     Network(NetEvent<NetMessage>),
     Terminal(TermEvent),
     Action(Box<dyn Action>),
@@ -37,7 +37,7 @@ pub struct Application<'a> {
     commands: CommandManager,
     //read_file_ev: ReadFile,
     _terminal_events: TerminalEventCollector,
-    event_queue: EventQueue<Event>,
+    pub event_queue: EventQueue<Event>,
 }
 
 impl<'a> Application<'a> {
