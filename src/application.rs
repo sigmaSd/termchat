@@ -1,5 +1,8 @@
 use super::state::{State, CursorMovement, ChatMessage, MessageType, ScrollMovement};
-use crate::terminal_events::{TerminalEventCollector};
+use crate::{
+    commands::send_audio::SendAudioCommand,
+    terminal_events::{TerminalEventCollector},
+};
 use crate::renderer::{Renderer};
 use crate::action::{Action, Processing};
 use crate::commands::{CommandManager};
@@ -38,6 +41,8 @@ pub struct Application<'a> {
     //read_file_ev: ReadFile,
     _terminal_events: TerminalEventCollector,
     event_queue: EventQueue<Event>,
+    play: Option<std::process::Child>,
+    stop_record: bool,
 }
 
 impl<'a> Application<'a> {
@@ -57,10 +62,12 @@ impl<'a> Application<'a> {
             config,
             state: State::default(),
             network,
-            commands: CommandManager::default().with(SendFileCommand),
+            commands: CommandManager::default().with(SendFileCommand).with(SendAudioCommand),
             // Stored because we need its internal thread running until the Application was dropped
             _terminal_events,
             event_queue,
+            play: None,
+            stop_record: false,
         })
     }
 
@@ -84,13 +91,19 @@ impl<'a> Application<'a> {
                     }
                     NetEvent::AddedEndpoint(_) => (),
                     NetEvent::RemovedEndpoint(endpoint) => self.state.disconnected_user(endpoint),
-                    NetEvent::DeserializationError(_) => ()
+                    NetEvent::DeserializationError(_) => (),
                 },
                 Event::Terminal(term_event) => {
                     self.process_terminal_event(term_event);
                 }
                 Event::Action(action) => {
-                    self.process_action(action);
+                    // Hack
+                    if !self.stop_record {
+                        self.process_action(action);
+                    }
+                    else {
+                        self.stop_record = false;
+                    }
                 }
                 Event::Close(error) => {
                     return match error {
@@ -169,6 +182,11 @@ impl<'a> Application<'a> {
 
                             try_write().report_if_err(&mut self.state);
                         }
+                        Chunk::Stream(chunk) => {
+                            if let Some(ref mut play) = self.play {
+                                play.stdin.as_mut().unwrap().write_all(&chunk).unwrap();
+                            }
+                        }
                     }
                 }
             }
@@ -193,6 +211,22 @@ impl<'a> Application<'a> {
                 }
                 KeyCode::Enter => {
                     if let Some(input) = self.state.reset_input() {
+                        if input == "?ra" {
+                            let play = std::process::Command::new("aplay")
+                                .stdin(std::process::Stdio::piped())
+                                .stderr(std::process::Stdio::null())
+                                .spawn()
+                                .unwrap();
+                            self.play = Some(play);
+                        };
+                        if input == "?ras" {
+                            self.play = None;
+                        };
+
+                        if input == "?sas" {
+                            self.stop_record = true;
+                        }
+
                         match self.commands.find_command_action(&input).transpose() {
                             Ok(action) => {
                                 let message = ChatMessage::new(
@@ -201,11 +235,10 @@ impl<'a> Application<'a> {
                                 );
                                 self.state.add_message(message);
 
-                                self.network
-                                    .send_all(
-                                        self.state.all_user_endpoints(),
-                                        NetMessage::UserMessage(input.clone()),
-                                    );
+                                self.network.send_all(
+                                    self.state.all_user_endpoints(),
+                                    NetMessage::UserMessage(input.clone()),
+                                );
 
                                 if let Some(action) = action {
                                     self.process_action(action)

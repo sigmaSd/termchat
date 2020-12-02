@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub enum Chunk {
     Data(Vec<u8>),
+    Stream(Vec<u8>),
     Error,
     End,
 }
